@@ -1,0 +1,136 @@
+---
+title: "Converting ProRes MOV to Linear EXR and Display PNGs"
+format:
+  html:
+    toc: true
+    code-fold: true
+jupyter: python3
+engine: bash
+---
+
+## 🎬 Introduction
+
+This notebook demonstrates a complete workflow to convert ProRes HQ `.mov` video files into:
+
+- **Linear OpenEXR (.exr)** frames suitable for color-managed post-production workflows.
+- **Display-referred PNGs** using the appropriate color transforms for student viewing.
+
+It is intended to teach:
+
+- The importance of scene-referred vs display-referred color.
+- How to use `ffmpeg`, `oiiotool`, and `OpenColorIO` in a film/animation pipeline.
+
+## 🔧 Requirements
+
+Make sure the following tools are installed and available in your environment:
+
+```bash
+ffmpeg -version | head -1
+oiiotool --version
+ociobakelut --version || echo "OCIO CLI optional"
+```
+
+## 📁 Define Paths and Configuration
+
+```python
+OCIO_CONFIG = "./ocio_rec709_to_linear/config.ocio"
+INPUT_DIR = "source_movs"
+TIFF_DIR = "tiff_frames"
+EXR_DIR = "exr_frames"
+PNG_DIR = "png_frames"
+```
+
+## 🎥 Step 1: Extract TIFFs from MOVs
+
+```bash
+mkdir -p "$TIFF_DIR"
+
+for mov in $INPUT_DIR/*.mov; do
+  name=$(basename "${mov%.*}")
+  mkdir -p "$TIFF_DIR/$name"
+  ffmpeg -i "$mov" -pix_fmt rgb48le -start_number 1 "$TIFF_DIR/$name/frame_%04d.tif"
+done
+```
+
+## 🎨 Step 2: Convert TIFFs to Linear EXRs (scene-referred)
+
+```bash
+mkdir -p "$EXR_DIR"
+
+for dir in $TIFF_DIR/*; do
+  name=$(basename "$dir")
+  mkdir -p "$EXR_DIR/$name"
+  for tif in "$dir"/*.tif; do
+    out="$EXR_DIR/$name/$(basename "${tif%.tif}.exr")"
+    oiiotool "$tif" \
+      --colorconfig "$OCIO_CONFIG" \
+      --colorconvert srgb_display linear \
+      -d half -o "$out"
+  done
+done
+```
+
+## 🖼️ Step 3: Convert Linear EXRs to Display-Ready PNGs
+
+```bash
+mkdir -p "$PNG_DIR"
+
+for dir in $EXR_DIR/*; do
+  name=$(basename "$dir")
+  mkdir -p "$PNG_DIR/$name"
+  for exr in "$dir"/*.exr; do
+    out="$PNG_DIR/$name/$(basename "${exr%.exr}.png")"
+    oiiotool "$exr" \
+      --colorconfig "$OCIO_CONFIG" \
+      --colorconvert linear srgb_display \
+      -d uint16 -o "$out"
+  done
+done
+```
+
+## ✅ Results and Discussion
+
+Each input `.mov` file now has a full pipeline result:
+
+- `tiff_frames/<name>/` — high bit-depth raw RGB frames
+- `exr_frames/<name>/` — OCIO-linear scene-referred EXRs
+- `png_frames/<name>/` — PNGs with display-referred gamma
+
+```markdown
+![](png_frames/example/frame_0004.png){width=80%}
+```
+
+This ramp example demonstrates expected quantization in ProRes and color fidelity after OCIO correction.
+
+## 🧰 Next Steps for Students
+
+- Modify the OCIO config to apply different LUTs (e.g. LogC, SLog3)
+- Try compressing with `ffmpeg` using `libx264` or `libx265`
+- Extend this pipeline to render slates or frame numbers via `oiiotool` overlays
+- Embed metadata using `exiftool` or `oiiotool --caption`
+
+---
+
+## 🔁 Batch Conversion Helper (Makefile)
+
+You may create a `Makefile` to run this entire notebook via `nbconvert`:
+
+```makefile
+convert:
+	quarto render mov_to_exr_pipeline.qmd
+```
+
+Then run:
+
+```bash
+make convert
+```
+
+---
+
+## 🧪 Bonus: Add reference frames
+
+Use the ramp and ColorChecker EXR generators to validate your round-trip fidelity.
+
+Let me know if you'd like to add an auto-testing block using `oiiotool --diff`.
+

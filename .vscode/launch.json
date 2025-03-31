@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "bashdb",
+        "request": "launch",
+        "name": "Bash-Debug (Homebrew Bash 5x)",
+        "program": "${file}",
+        "args": [],
+        "env": {},
+        "cwd": "${fileDirname}",
+        "pathBash": "/opt/homebrew/bin/bash"
+      }
+    ]
+  }
+  

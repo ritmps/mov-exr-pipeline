@@ -1,0 +1,8 @@
+*.tiff
+*.tif
+*.exr
+*.png
+*.jpg
+*.mov
+*.mp4
+.DS_Store

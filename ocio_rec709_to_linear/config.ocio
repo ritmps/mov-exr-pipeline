@@ -1,0 +1,34 @@
+ocio_profile_version: 2
+
+roles:
+  default: linear
+  color_timing: srgb_display
+  scene_linear: linear
+  compositing_log: srgb_display
+  aces_interchange: linear
+  cie_xyz_d65_interchange: linear
+
+colorspaces:
+  - !<ColorSpace>
+    name: srgb_display
+    family: srgb
+    bitdepth: 16f
+    isdata: false
+    allocation: uniform
+    to_reference: !<MatrixTransform> {matrix: [1,0,0,0,  0,1,0,0,  0,0,1,0,  0,0,0,1]}
+    from_reference: !<MatrixTransform> {matrix: [1,0,0,0,  0,1,0,0,  0,0,1,0,  0,0,0,1]}
+
+  - !<ColorSpace>
+    name: linear
+    family: linear
+    bitdepth: 16f
+    isdata: false
+    allocation: uniform
+
+displays:
+  Rec709:
+    - !<View> {name: Display, colorspace: srgb_display}
+
+active_displays: [Rec709]
+active_views: [Display]
+
