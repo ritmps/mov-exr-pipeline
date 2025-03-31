@@ -58,6 +58,10 @@ We'll create a directory called `test_frames` to store all the generated frames.
 
 In python cells, you can use an exclaimation mark `!` to run shell commands. This is useful for running `oiiotool`, `ffmpeg`, and other command-line tools directly from the notebook.
 
+```{bash}
+pwd
+```
+
 ```{python}
 import os
 
