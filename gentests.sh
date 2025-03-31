@@ -76,11 +76,15 @@ for f in {1..6}; do
     oiiotool "$orig" "$roundtrip" --diff --fail $THRESH > diff_data/tmp_diff.txt
     oiiotool "$orig" "$roundtrip" --sub --abs -o "$diffimg"
 
+    # Emphasize differences and render to PNG
+    pngimg="diff_frames/frame_$(printf "%04d" $f)_diff.png"
+    oiiotool "$diffimg" --mulc 50 --clamp:low=0 --clamp:high=1 -o "$pngimg"
+
     MEAN=$(grep 'Mean error' diff_data/tmp_diff.txt | awk '{print $4}')
     RMS=$(grep 'RMS error' diff_data/tmp_diff.txt | awk '{print $4}')
     PSNR=$(grep 'Peak SNR' diff_data/tmp_diff.txt | awk '{print $4}')
     MAXERR=$(grep 'Max error' diff_data/tmp_diff.txt | awk '{print $5}')
-    MAXINFO=$(grep 'Max error' diff_data/tmp_diff.txt | sed -n 's/.*@ (\(.*\), \(.*\), \(.*\))  values are \(.*\),.* vs \(.*\),.*/\1,\2,\3,\4,\5/p')
+    MAXINFO=$(grep 'Max error' diff_data/tmp_diff.txt | sed -n 's/.*@ (\(.*\), \(.*\), \(.*\))  values are \(.*\),.* vs \(.*\),.*/\1,\2,\3,"\4","\5"/p')
 
     echo "$f,$MEAN,$RMS,$PSNR,$MAXERR,$MAXINFO" >> $CSV
     cat diff_data/tmp_diff.txt
