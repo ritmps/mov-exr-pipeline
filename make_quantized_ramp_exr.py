@@ -2,6 +2,7 @@
 
 import OpenImageIO as oiio
 import numpy as np
+import sys
 
 W, H = 2048, 1536
 levels = 1024  # Simulate 10-bit ProRes quantization
@@ -15,5 +16,7 @@ rgb = np.stack([ramp_2d] * 3, axis=2)
 spec = oiio.ImageSpec(W, H, 3, "float")
 buf = oiio.ImageBuf(spec)
 buf.set_pixels(oiio.ROI(0, W, 0, H), rgb)
-buf.write("test_frames/frame_0006.exr")
-print("✅ Wrote quantized ramp to test_frames/frame_0006.exr")
+
+output_filename = sys.argv[1] if len(sys.argv) > 1 else "quantized_ramp.exr"
+buf.write(output_filename)
+print("✅ Wrote quantized ramp to "+output_filename)

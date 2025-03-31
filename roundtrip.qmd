@@ -1,0 +1,124 @@
+---
+title: "EXR Roundtrip Codec Validation"
+format: 
+  html:
+    theme: cosmo
+    number-sections: false
+    toc: true
+    toc-location: left
+    title-block-style: manuscript
+    title-block-banner: "#F76902"
+    title-block-banner-color: "#F0F3F4"
+    css: styles.css
+    mermaid:
+      theme: default
+jupyter: python3
+---
+
+```{python}
+print("hello from real notebook mode!")
+```
+
+
+## 🎬 Overview
+
+This notebook demonstrates the full pipeline for validating color fidelity when converting EXR image sequences through **ProRes 4444** roundtrip compression. It is designed to teach:
+
+-   Pattern generation (RGB ramps, ColorChecker)
+-   Codec roundtrip testing with `ffmpeg`
+-   Use of `oiiotool` for conversion and analysis
+-   Difference visualization and metrics (RMS, PSNR, Max error)
+
+This matches the workflow defined in `gentests.sh`, and is intended to help students understand where precision is lost and how to minimize it.
+
+------------------------------------------------------------------------
+
+## 📦 Frame Generation
+
+We begin with generating 6 test frames:
+
+-   Solid red, green, and blue
+-   A true ColorChecker chart (from BabelColor Lab TIFF)
+-   A linear float ramp
+-   A quantized ramp
+
+```{bash}
+bash gentests.sh
+```
+
+------------------------------------------------------------------------
+
+## 🔎 Diff Metrics and Heatmaps
+
+Each original frame is compared to its roundtripped EXR using `oiiotool --diff`. Metrics are collected into a CSV for easy viewing:
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+metrics = pd.read_csv("diff_data/diff_summary.csv")
+metrics.set_index("frame", inplace=True)
+metrics[["mean", "rms", "psnr", "max_error"]]
+```
+
+### 📈 Error vs Frame
+
+```{python}
+metrics[["rms", "max_error"]].plot(kind="bar", figsize=(10, 5), title="Roundtrip Errors by Frame")
+plt.ylabel("Error")
+plt.grid(True)
+plt.tight_layout()
+```
+
+------------------------------------------------------------------------
+
+## 🌈 Visual Comparison
+
+### 🔥 Difference Maps
+
+You can inspect the absolute difference between original and roundtrip EXRs:
+
+::: columns
+
+::: {.column width="50%"}
+![](diff_frames/frame_0004_diff.exr){fig-cap="Quantized ramp error" width="100%"}
+:::
+
+::: {.column width="50%"}
+![](diff_frames/frame_0005_diff.exr){fig-cap="ColorChecker difference" width="100%"}
+:::
+
+:::
+
+------------------------------------------------------------------------
+
+## 🧪 Notes for Students
+
+-   The ProRes 4444 format retains more precision than standard 422, but still compresses chroma
+-   ColorChecker conversion was done from Lab TIFF using ImageMagick (due to lack of Lab support in OCIO)
+-   Linear ramps suffer most from quantization
+
+------------------------------------------------------------------------
+
+## 📁 Artifacts
+
+All generated files are available locally:
+
+-   `test_frames/`
+-   `tiff_frames/`
+-   `exr_frames/`
+-   `diff_frames/`
+-   `diff_data/diff_summary.csv`
+
+------------------------------------------------------------------------
+
+## ✅ Wrap-up
+
+This notebook supports understanding of:
+
+-   Visual error inspection in roundtrip workflows
+-   Codec selection trade-offs
+-   Role of OCIO and color conversion
+
+Let your students modify the test script, add other codecs, or introduce OCIO transforms to explore further.

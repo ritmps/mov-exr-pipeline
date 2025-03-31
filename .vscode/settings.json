@@ -1,3 +1,6 @@
 {
-  "cSpell.words": ["oiio"]
+  "cSpell.words": ["oiio"],
+  "workbench.editorAssociations": {
+      "*.qmd": "jupyter-notebook"
+    }
 }
