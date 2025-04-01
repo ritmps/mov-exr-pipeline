@@ -1,16 +1,14 @@
 project:
   type: website
+  output-dir: _site
 
 website:
   site-url: https://flipphillips.github.io/exr-validation/
   title: "EXR Validation"
-  page-navigation: true
   navbar:
     left:
-      - href: index.qmd
-        text: Home
       - href: roundtrip.qmd
-        text: EXR Roundtrip Test
+        text: EXR Roundtrip
 
 format:
   html:
@@ -25,6 +23,6 @@ format:
     mermaid:
       theme: default
 
-publish:
-  provider: github
-  repo: flipphillips/exr-validation
+# publish:
+#   provider: github
+#   repo: flipphillips/exr-validation
