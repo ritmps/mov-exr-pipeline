@@ -1,0 +1,149 @@
+[
+  {
+    "objectID": "roundtrip.html#overview",
+    "href": "roundtrip.html#overview",
+    "title": "EXR Roundtrip Codec Validation",
+    "section": "📖 Overview",
+    "text": "📖 Overview\nThis notebook provides a comprehensive guide to validating the fidelity of EXR image sequences when encoded and decoded through ProRes 4444. It covers the entire pipeline from generating test frames, encoding them, decoding back to EXR, and analyzing the differences.\nThe goal is to ensure that the roundtrip process maintains the original image quality, which is crucial for visual effects and animation workflows.\nThis workflow requires: - Python 3.8+ with numpy, pandas, matplotlib, and seaborn - OpenColorIO for color management - OpenImageIO for image processing - ImageMagick for TIFF conversion - FFmpeg for video encoding/decoding - oiiotool for image manipulation and analysis"
+  },
+  {
+    "objectID": "roundtrip.html#frame-generation",
+    "href": "roundtrip.html#frame-generation",
+    "title": "EXR Roundtrip Codec Validation",
+    "section": "📦 Frame Generation",
+    "text": "📦 Frame Generation\nWe will now generate a suite of test frames for evaluating codec roundtrip fidelity.\nNote that there is a gentests.sh script that can be run to generate all the test frames and perform the roundtrip codec validation. This script is designed to be run in a Unix-like environment (Linux, macOS, WSL on Windows).\nHere, we will break down the steps to generate the test frames and perform the roundtrip codec validation via some Python glue.\n\n🔴 Red / 🟢 Green / 🔵 Blue Test Frames\nJust some full frames of red, green, and blue to start with. Use oiiotool to generate these frames.\nWe’ll create a directory called test_frames to store all the generated frames.\nIn python cells, you can use an exclaimation mark ! to run shell commands. This is useful for running oiiotool, ffmpeg, and other command-line tools directly from the notebook.\npwd\n\nimport os\n\n# Create a directory for test frames - \n# we use this later too\ntest_frames_dir = \"test_frames\"\n\nos.makedirs(test_frames_dir, exist_ok=True)\nos.chdir(test_frames_dir)\n\n# Generate RGB test frames\n!oiiotool --pattern constant:2048x1536:3 2048x1536 3 --chnames R,G,B --ch R=1,G=0,B=0 -o frame_0001.exr\n!oiiotool --pattern constant:2048x1536:3 2048x1536 3 --chnames R,G,B --ch R=0,G=1,B=0 -o frame_0002.exr\n!oiiotool --pattern constant:2048x1536:3 2048x1536 3 --chnames R,G,B --ch R=0,G=0,B=1 -o frame_0003.exr\n\nprint(\"✅ RGB generated in \"+test_frames_dir)\n\n# Change directory back to the original location\nos.chdir(\"..\")\n\n✅ RGB generated in test_frames\n\n\n\n\n🎨 ColorChecker from TIFF\nThis goes out to the Babel Color site to get their ColorChecker L*a*b* TIFF that has been measured and averaged over multiple charts (30 I think?). We then convert it to EXR using ImageMagick and resize it with oiiotool.1\n\nimport urllib.request\nimport zipfile\n\n# go to the test frames directory\nos.chdir(test_frames_dir) \n\n# Define the URL and local paths\nurl = \"https://babelcolor.com/index_htm_files/ColorChecker_Lab_from_X-Rite_16bit_AfterNov2014.zip\"\nzip_path = \"ColorChecker_Lab.zip\"\nextract_path = \".\"\n\n# Download the file if it doesn't exist\nif not os.path.exists(zip_path):\n  print(\"Downloading ColorChecker Lab ZIP...\")\n  urllib.request.urlretrieve(url, zip_path)\nelse:\n  print(\"ZIP file already exists. Skipping download.\")\n\n# Extract the ZIP file\nwith zipfile.ZipFile(zip_path, 'r') as zip_ref:\n    zip_ref.extractall(extract_path)\n\n# Do the annoying ImageMagick conversion to EXR - you _should_ be able\n# to do this with oiiotool, but it doesn't work for some reason.\n!magick ColorChecker_Lab_from_X-Rite_16bit_AfterNov2014.tif \\\n  -colorspace sRGB -depth 16 -define quantum:format=floating-point \\\n  EXR:frame_0004_tmp.exr\n\n# Resize to 2048x1536 and convert to half-float EXR\n!oiiotool frame_0004_tmp.exr --resize 2048x1536 -d half -o frame_0004.exr\n\n# Clean up\n# Remove temporary files\nos.remove(\"frame_0004_tmp.exr\")\nos.remove(\"ColorChecker_Lab_from_X-Rite_16bit_AfterNov2014.tif\")\nos.remove(\"ColorChecker_Lab.zip\")\n\nprint(\"✅ Color Checker downloaded and converted \"+test_frames_dir)\n\n# Change directory back to the original location\nos.chdir(\"..\")\n\nDownloading ColorChecker Lab ZIP...\n✅ Color Checker downloaded and converted test_frames\n\n\n\n\n📈 Generate Ramps via Python\nThere are scripts in the directory that already do these things, but we’ll just drop them in here for conpleteness. It turns out oiiotool used to be able to do this, but it doesn’t work anymore. So we have to use Python to generate the ramps.\nThe make_quantized_ramp_exr.py script generates a quantized ramp image, while the make_ramp_exr.py script generates a linear ramp image.\n\nRegular Ramp\n\nimport OpenImageIO as oiio\nimport numpy as np\nimport sys\n\nW, H = 2048, 1536\nramp = np.linspace(0, 1, W, dtype=np.float32)\nramp_2d = np.tile(ramp, (H, 1))\nrgb = np.stack([ramp_2d]*3, axis=2)\n\nspec = oiio.ImageSpec(W, H, 3, \"float\")\nbuf = oiio.ImageBuf(spec)\nbuf.set_pixels(oiio.ROI(0, W, 0, H), rgb)\n\noutput_filename = test_frames_dir+'/frame_0005.exr'\nbuf.write(output_filename)\nprint(\"✅ Wrote ramp to \"+output_filename)\n\n✅ Wrote ramp to test_frames/frame_0005.exr\n\n\n\n\nQuantized Ramp\nSame thing as above, but we’re quantizing it to 10-bit to mimic the 4:2:2 ProRes HQ we’re messing with from Kodak’s scanner.\n\nimport OpenImageIO as oiio\nimport numpy as np\nimport sys\n\nW, H = 2048, 1536\nlevels = 1024  # Simulate 10-bit ProRes quantization\n\n# Create a quantized horizontal ramp\nramp = np.linspace(0, 1, levels, endpoint=True, dtype=np.float32)\nramp = np.repeat(ramp, W // levels + 1)[:W]  # Extend to W pixels\nramp_2d = np.tile(ramp, (H, 1))\nrgb = np.stack([ramp_2d] * 3, axis=2)\n\nspec = oiio.ImageSpec(W, H, 3, \"float\")\nbuf = oiio.ImageBuf(spec)\nbuf.set_pixels(oiio.ROI(0, W, 0, H), rgb)\n\noutput_filename = test_frames_dir+f'/frame_0006.exr'\nbuf.write(output_filename)\nprint(\"✅ Wrote quantized ramp to \"+output_filename)\n\n✅ Wrote quantized ramp to test_frames/frame_0006.exr\n\n\n\n\n\n\n🎞️ Encode to ProRes HQ\nNow that we have the test frames, we can encode them to ProRes HQ. This is done using ffmpeg, a powerful tool for video processing. The command below encodes the EXR frames into a ProRes 4444 MOV file. The -pix_fmt yuv444p10le option specifies the pixel format, and -profile:v 4 sets the ProRes profile to 4444. If we prefer a 4:2:2 profile, we can use -profile:v 3 instead.\nLet’s do this with straight python, no bash, for now. This way you can see how to explicitly call the subprocesses if you want. (It also lets us do some variable substitution.)\n\nfrom subprocess import run\n\noutput_file = f\"test_output.mov\"\n\nrun([\n  \"ffmpeg\",\n  \"-hide_banner\", \"-loglevel\", \"error\", \"-y\",\n  \"-r\", \"24\",\n  \"-start_number\", \"1\",\n  \"-i\", f\"{test_frames_dir}/frame_%04d.exr\",\n  \"-frames:v\", \"6\",\n  \"-c:v\", \"prores_ks\",\n  \"-profile:v\", \"4\",\n  \"-pix_fmt\", \"yuv444p10le\",\n  output_file\n])\n\nprint(\"✅ Wrote movie to \"+output_file)\n\n✅ Wrote movie to test_output.mov\n\n\n\n\n📥 Decode to TIFFs, Convert to Linear EXRs\nThe ‘clean’ way to do this, according to the FFmpeg documentation, is to dump as TIFFs and then convert to EXRs. This is done using ffmpeg to decode the MOV file back into TIFF frames, and then using oiiotool to convert the TIFFs to EXR format with linear color space.\nAgain, straight python, because we’re doing some variable substitution.\n\nimport glob\n\n# Define paths\ntiff_dir = \"tiff_frames\"\nexr_dir = \"exr_frames\"\nocio_config = \"./ocio_rec709_to_linear/config.ocio\"\n\nos.makedirs(tiff_dir, exist_ok=True)\nos.makedirs(exr_dir, exist_ok=True)\n\n# Run the ffmpeg command to extract TIFF frames\nrun([\n  \"ffmpeg\", \n  \"-hide_banner\", \"-loglevel\", \"error\", \"-y\",\n  \"-i\", \"test_output.mov\",\n  \"-pix_fmt\", \"rgb48le\",\n  \"-start_number\", \"1\",\n  tiff_dir+\"/frame_%04d.tif\"\n])\n\n\n# Process each TIFF file\nfor tiff_file in glob.glob(f\"{tiff_dir}/*.tif\"):\n  exr_file = os.path.join(exr_dir, os.path.basename(tiff_file).replace(\".tif\", \".exr\"))\n  run([\n    \"oiiotool\", tiff_file,\n    \"--colorconfig\", ocio_config,\n    \"--colorconvert\", \"srgb_display\", \"linear\",\n    \"-d\", \"half\",\n    \"-o\", exr_file\n  ])\n\nprint(\"✅ TIFFs extracted and converted to EXR in \"+exr_dir)\n\n✅ TIFFs extracted and converted to EXR in exr_frames\n\n\n\n\n🔎 Compute Differences & Export Heatmaps\nOK - here’s the cool part. Let’s compute some differences, compute some heatmaps of the differences, etc.\nFirst - a utility to compute some metrics via colour-science.\n\nimport colour\nfrom colour.models import RGB_to_XYZ, XYZ_to_Lab, RGB_COLOURSPACES\nimport re\n\ndef compute_diff_metrics(diff_txt_path):\n    import re\n    from colour.models import RGB_to_XYZ, XYZ_to_Lab, RGB_COLOURSPACES\n    import colour\n\n    with open(diff_txt_path, \"r\") as f:\n        lines = f.readlines()\n\n    mean = float([line for line in lines if \"Mean error\" in line][0].split()[-1])\n    rms = float([line for line in lines if \"RMS error\" in line][0].split()[-1])\n    psnr = float([line for line in lines if \"Peak SNR\" in line][0].split()[-1])\n\n    max_error_line = [line for line in lines if \"Max error\" in line][0]\n    match = re.search(\n        r'Max error\\s*=\\s*([\\d.]+)\\s*@.*values are ([\\d., ]+) vs ([\\d., ]+)', max_error_line\n    )\n\n    max_error = float(match.group(1))\n    orig_rgb = [float(x.strip()) for x in match.group(2).split(',')]\n    roundtrip_rgb = [float(x.strip()) for x in match.group(3).split(',')]\n\n    # Use BT.709 as the working colourspace\n    colourspace = RGB_COLOURSPACES[\"ITU-R BT.709\"]\n\n    # Convert RGB → XYZ → Lab\n    orig_xyz = RGB_to_XYZ(orig_rgb, colourspace)\n    roundtrip_xyz = RGB_to_XYZ(roundtrip_rgb, colourspace)\n\n    orig_lab = XYZ_to_Lab(orig_xyz)\n    roundtrip_lab = XYZ_to_Lab(roundtrip_xyz)\n\n    delta_e = colour.delta_E(orig_lab, roundtrip_lab, method='CIE 1976')\n\n    return mean, rms, psnr, max_error, orig_rgb, roundtrip_rgb, delta_e\n\nNow, we iterate through the images, do the computations…\n\nimport pandas as pd\n\n# Define paths\ndiff_dir = \"diff_frames\"\ndiff_data_dir = \"diff_data\"\n\n# Create directories for results\nos.makedirs(diff_dir, exist_ok=True)\nos.makedirs(diff_data_dir, exist_ok=True)\n\n# Initialize a list to store diff metrics\ndiff_metrics = []\n\n# Process each frame\nexr_files = sorted(glob.glob(f\"{test_frames_dir}/frame_*.exr\"))\nfor i, exr_path in enumerate(exr_files, start=1):\n  frame_id = f\"{i:04d}\"\n  original_frame = os.path.join(test_frames_dir, f\"frame_{frame_id}.exr\")\n  roundtrip_frame = os.path.join(exr_dir, f\"frame_{frame_id}.exr\")\n  diff_frame = os.path.join(diff_dir, f\"frame_{frame_id}_diff.exr\")\n  diff_png = os.path.join(diff_dir, f\"frame_{frame_id}_diff.png\")\n  tmp_diff_file = os.path.join(diff_data_dir, f\"diff_{frame_id}.txt\")\n  \n  run([\n      \"oiiotool\", original_frame, roundtrip_frame,\n      \"--diff\", \"--fail\", \"1e-06\", \"--hardfail\", \"1e-03\",\n      \"-o\", diff_frame\n  ], stdout=open(tmp_diff_file, \"w\"))\n\n  with open(tmp_diff_file, \"r\") as f:\n      diff_output = f.read()\n\n  if \"PASS\" in diff_output:\n      # print(f\"Frame {frame_id}: PASS (no significant differences)\")\n      mean = rms = psnr = max_error = delta_e = \"NA\"\n      orig_rgb = roundtrip_rgb = [\"NA\", \"NA\", \"NA\"]\n  else:\n      mean, rms, psnr, max_error, orig_rgb, roundtrip_rgb, delta_e = compute_diff_metrics(tmp_diff_file)\n\n  def format_metric(label, value):\n      if isinstance(value, float):\n          return f\"{label:&lt;24} {value:.6f}\"\n      else:\n          return f\"{label:&lt;24} {value}\"\n\n  # print(f\"Frame {frame_id}:\")\n  # print(format_metric(\"Mean error:\", mean))\n  # print(format_metric(\"RMS error:\", rms))\n  # print(format_metric(\"PSNR:\", psnr))\n  # print(format_metric(\"Max error:\", max_error))\n  # print(format_metric(\"ΔE* (CIE76):\", delta_e))\n  # print(f\"{'Original RGB:':&lt;24} {orig_rgb}\")\n  # print(f\"{'Roundtripped RGB:':&lt;24} {roundtrip_rgb}\")\n\n  diff_metrics.append({\n      \"frame\": frame_id,\n      \"mean\": mean,\n      \"rms\": rms,\n      \"psnr\": psnr,\n      \"max_error\": max_error,\n      \"orig_r\": orig_rgb[0],\n      \"orig_g\": orig_rgb[1],\n      \"orig_b\": orig_rgb[2],\n      \"roundtrip_r\": roundtrip_rgb[0],\n      \"roundtrip_g\": roundtrip_rgb[1],\n      \"roundtrip_b\": roundtrip_rgb[2],\n      \"delta_e\": delta_e\n  })\n\n  # Generate a heatmap for the difference\n  run([\n    \"oiiotool\", diff_frame,\n    \"--mulc\", \"50\", \"--clamp:low=0\", \"--clamp:high=1\",\n    \"-o\", diff_png\n  ])\n\n# Save the metrics to a CSV file\ndiff_metrics_df = pd.DataFrame(diff_metrics)\ndiff_metrics_df.to_csv(diff_data_dir+f\"/diff_summary.csv\", index=False)\nprint(\"✅ Diff metrics and heatmaps generated successfully.\")\n\n✅ Diff metrics and heatmaps generated successfully."
+  },
+  {
+    "objectID": "roundtrip.html#we-now-have-fully-traceable-artifacts-for-visual-and-statistical-inspection.",
+    "href": "roundtrip.html#we-now-have-fully-traceable-artifacts-for-visual-and-statistical-inspection.",
+    "title": "EXR Roundtrip Codec Validation",
+    "section": "We now have fully traceable artifacts for visual and statistical inspection.",
+    "text": "We now have fully traceable artifacts for visual and statistical inspection."
+  },
+  {
+    "objectID": "roundtrip.html#diff-metrics-and-heatmaps",
+    "href": "roundtrip.html#diff-metrics-and-heatmaps",
+    "title": "EXR Roundtrip Codec Validation",
+    "section": "🔎 Diff Metrics and Heatmaps",
+    "text": "🔎 Diff Metrics and Heatmaps\nEach original frame is compared to its roundtripped EXR using oiiotool --diff. Metrics are collected into a CSV for easy viewing:\n\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport seaborn as sns\n\nmetrics = pd.read_csv(\"diff_data/diff_summary.csv\")\nmetrics.set_index(\"frame\", inplace=True)\nmetrics[[\"mean\", \"rms\", \"psnr\", \"max_error\"]]\n\n\n\n\n\n\n\n\nmean\nrms\npsnr\nmax_error\n\n\nframe\n\n\n\n\n\n\n\n\n1\nNaN\nNaN\nNaN\nNaN\n\n\n2\nNaN\nNaN\nNaN\nNaN\n\n\n3\nNaN\nNaN\nNaN\nNaN\n\n\n4\n0.000551\n0.000679\n63.3594\n0.016846\n\n\n5\n0.000280\n0.000334\n69.5221\n0.000858\n\n\n6\n0.000296\n0.000357\n68.9481\n0.001063\n\n\n\n\n\n\n\n\n📈 Error vs Frame\n\nmetrics[[\"rms\", \"max_error\"]].plot(kind=\"bar\", figsize=(10, 5), title=\"Roundtrip Errors by Frame\")\nplt.ylabel(\"Error\")\nplt.grid(True)\nplt.tight_layout()"
+  },
+  {
+    "objectID": "roundtrip.html#visual-comparison",
+    "href": "roundtrip.html#visual-comparison",
+    "title": "EXR Roundtrip Codec Validation",
+    "section": "🌈 Visual Comparison",
+    "text": "🌈 Visual Comparison\n\n🔥 Difference Maps\nYou can inspect the absolute difference between original and roundtrip EXRs:"
+  },
+  {
+    "objectID": "roundtrip.html#notes-for-students",
+    "href": "roundtrip.html#notes-for-students",
+    "title": "EXR Roundtrip Codec Validation",
+    "section": "🧪 Notes for Students",
+    "text": "🧪 Notes for Students\n\nThe ProRes 4444 format retains more precision than standard 422, but still compresses chroma\nColorChecker conversion was done from Lab TIFF using ImageMagick (due to lack of Lab support in OCIO)\nLinear ramps suffer most from quantization"
+  },
+  {
+    "objectID": "roundtrip.html#artifacts",
+    "href": "roundtrip.html#artifacts",
+    "title": "EXR Roundtrip Codec Validation",
+    "section": "📁 Artifacts",
+    "text": "📁 Artifacts\nAll generated files are available locally:\n\ntest_frames/\ntiff_frames/\nexr_frames/\ndiff_frames/\ndiff_data/diff_summary.csv"
+  },
+  {
+    "objectID": "roundtrip.html#wrap-up",
+    "href": "roundtrip.html#wrap-up",
+    "title": "EXR Roundtrip Codec Validation",
+    "section": "✅ Wrap-up",
+    "text": "✅ Wrap-up\nThis notebook supports understanding of:\n\nVisual error inspection in roundtrip workflows\nCodec selection trade-offs\nRole of OCIO and color conversion\n\nLet your students modify the test script, add other codecs, or introduce OCIO transforms to explore further."
+  },
+  {
+    "objectID": "roundtrip.html#footnotes",
+    "href": "roundtrip.html#footnotes",
+    "title": "EXR Roundtrip Codec Validation",
+    "section": "Footnotes",
+    "text": "Footnotes\n\n\nWe have to use ImageMagick to convert from Lab to RGB because OCIO does not support Lab as a source color space. This is a limitation of the OCIO config we are using.↩︎"
+  },
+  {
+    "objectID": "mov-to-exr.html",
+    "href": "mov-to-exr.html",
+    "title": "Converting ProRes MOV to Linear EXR and Display PNGs",
+    "section": "",
+    "text": "This notebook demonstrates a complete workflow to convert ProRes HQ .mov video files into:\n\nLinear OpenEXR (.exr) frames suitable for color-managed post-production workflows.\nDisplay-referred PNGs using the appropriate color transforms for student viewing.\n\nIt is intended to teach:\n\nThe importance of scene-referred vs display-referred color.\nHow to use ffmpeg, oiiotool, and OpenColorIO in a film/animation pipeline."
+  },
+  {
+    "objectID": "mov-to-exr.html#introduction",
+    "href": "mov-to-exr.html#introduction",
+    "title": "Converting ProRes MOV to Linear EXR and Display PNGs",
+    "section": "",
+    "text": "This notebook demonstrates a complete workflow to convert ProRes HQ .mov video files into:\n\nLinear OpenEXR (.exr) frames suitable for color-managed post-production workflows.\nDisplay-referred PNGs using the appropriate color transforms for student viewing.\n\nIt is intended to teach:\n\nThe importance of scene-referred vs display-referred color.\nHow to use ffmpeg, oiiotool, and OpenColorIO in a film/animation pipeline."
+  },
+  {
+    "objectID": "mov-to-exr.html#requirements",
+    "href": "mov-to-exr.html#requirements",
+    "title": "Converting ProRes MOV to Linear EXR and Display PNGs",
+    "section": "🔧 Requirements",
+    "text": "🔧 Requirements\nMake sure the following tools are installed and available in your environment:\nffmpeg -version | head -1\noiiotool --version\nociobakelut --version || echo \"OCIO CLI optional\""
+  },
+  {
+    "objectID": "mov-to-exr.html#define-paths-and-configuration",
+    "href": "mov-to-exr.html#define-paths-and-configuration",
+    "title": "Converting ProRes MOV to Linear EXR and Display PNGs",
+    "section": "📁 Define Paths and Configuration",
+    "text": "📁 Define Paths and Configuration\nOCIO_CONFIG = \"./ocio_rec709_to_linear/config.ocio\"\nINPUT_DIR = \"source_movs\"\nTIFF_DIR = \"tiff_frames\"\nEXR_DIR = \"exr_frames\"\nPNG_DIR = \"png_frames\""
+  },
+  {
+    "objectID": "mov-to-exr.html#step-1-extract-tiffs-from-movs",
+    "href": "mov-to-exr.html#step-1-extract-tiffs-from-movs",
+    "title": "Converting ProRes MOV to Linear EXR and Display PNGs",
+    "section": "🎥 Step 1: Extract TIFFs from MOVs",
+    "text": "🎥 Step 1: Extract TIFFs from MOVs\nmkdir -p \"$TIFF_DIR\"\n\nfor mov in $INPUT_DIR/*.mov; do\n  name=$(basename \"${mov%.*}\")\n  mkdir -p \"$TIFF_DIR/$name\"\n  ffmpeg -i \"$mov\" -pix_fmt rgb48le -start_number 1 \"$TIFF_DIR/$name/frame_%04d.tif\"\ndone"
+  },
+  {
+    "objectID": "mov-to-exr.html#step-2-convert-tiffs-to-linear-exrs-scene-referred",
+    "href": "mov-to-exr.html#step-2-convert-tiffs-to-linear-exrs-scene-referred",
+    "title": "Converting ProRes MOV to Linear EXR and Display PNGs",
+    "section": "🎨 Step 2: Convert TIFFs to Linear EXRs (scene-referred)",
+    "text": "🎨 Step 2: Convert TIFFs to Linear EXRs (scene-referred)\nmkdir -p \"$EXR_DIR\"\n\nfor dir in $TIFF_DIR/*; do\n  name=$(basename \"$dir\")\n  mkdir -p \"$EXR_DIR/$name\"\n  for tif in \"$dir\"/*.tif; do\n    out=\"$EXR_DIR/$name/$(basename \"${tif%.tif}.exr\")\"\n    oiiotool \"$tif\" \\\n      --colorconfig \"$OCIO_CONFIG\" \\\n      --colorconvert srgb_display linear \\\n      -d half -o \"$out\"\n  done\ndone"
+  },
+  {
+    "objectID": "mov-to-exr.html#step-3-convert-linear-exrs-to-display-ready-pngs",
+    "href": "mov-to-exr.html#step-3-convert-linear-exrs-to-display-ready-pngs",
+    "title": "Converting ProRes MOV to Linear EXR and Display PNGs",
+    "section": "🖼️ Step 3: Convert Linear EXRs to Display-Ready PNGs",
+    "text": "🖼️ Step 3: Convert Linear EXRs to Display-Ready PNGs\nmkdir -p \"$PNG_DIR\"\n\nfor dir in $EXR_DIR/*; do\n  name=$(basename \"$dir\")\n  mkdir -p \"$PNG_DIR/$name\"\n  for exr in \"$dir\"/*.exr; do\n    out=\"$PNG_DIR/$name/$(basename \"${exr%.exr}.png\")\"\n    oiiotool \"$exr\" \\\n      --colorconfig \"$OCIO_CONFIG\" \\\n      --colorconvert linear srgb_display \\\n      -d uint16 -o \"$out\"\n  done\ndone"
+  },
+  {
+    "objectID": "mov-to-exr.html#results-and-discussion",
+    "href": "mov-to-exr.html#results-and-discussion",
+    "title": "Converting ProRes MOV to Linear EXR and Display PNGs",
+    "section": "✅ Results and Discussion",
+    "text": "✅ Results and Discussion\nEach input .mov file now has a full pipeline result:\n\ntiff_frames/&lt;name&gt;/ — high bit-depth raw RGB frames\nexr_frames/&lt;name&gt;/ — OCIO-linear scene-referred EXRs\npng_frames/&lt;name&gt;/ — PNGs with display-referred gamma\n\n![](png_frames/example/frame_0004.png){width=80%}\nThis ramp example demonstrates expected quantization in ProRes and color fidelity after OCIO correction."
+  },
+  {
+    "objectID": "mov-to-exr.html#next-steps-for-students",
+    "href": "mov-to-exr.html#next-steps-for-students",
+    "title": "Converting ProRes MOV to Linear EXR and Display PNGs",
+    "section": "🧰 Next Steps for Students",
+    "text": "🧰 Next Steps for Students\n\nModify the OCIO config to apply different LUTs (e.g. LogC, SLog3)\nTry compressing with ffmpeg using libx264 or libx265\nExtend this pipeline to render slates or frame numbers via oiiotool overlays\nEmbed metadata using exiftool or oiiotool --caption"
+  },
+  {
+    "objectID": "mov-to-exr.html#batch-conversion-helper-makefile",
+    "href": "mov-to-exr.html#batch-conversion-helper-makefile",
+    "title": "Converting ProRes MOV to Linear EXR and Display PNGs",
+    "section": "🔁 Batch Conversion Helper (Makefile)",
+    "text": "🔁 Batch Conversion Helper (Makefile)\nYou may create a Makefile to run this entire notebook via nbconvert:\nconvert:\n    quarto render mov_to_exr_pipeline.qmd\nThen run:\nmake convert"
+  },
+  {
+    "objectID": "mov-to-exr.html#bonus-add-reference-frames",
+    "href": "mov-to-exr.html#bonus-add-reference-frames",
+    "title": "Converting ProRes MOV to Linear EXR and Display PNGs",
+    "section": "🧪 Bonus: Add reference frames",
+    "text": "🧪 Bonus: Add reference frames\nUse the ramp and ColorChecker EXR generators to validate your round-trip fidelity.\nLet me know if you’d like to add an auto-testing block using oiiotool --diff."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "EXR Validation",
+    "section": "",
+    "text": "Note\n\n\n\n🔁 Head straight to the EXR Roundtrip Analysis."
+  }
+]
