@@ -187,7 +187,7 @@ background: #F76902;
                 <div>
             <div class="quarto-title-meta-heading">Modified</div>
             <div class="quarto-title-meta-contents">
-              <p class="date-modified">Lpm25t built on Apr 1, 2025</p>
+              <p class="date-modified">Lpm21t built on Apr 1, 2025</p>
             </div>
           </div>
                 
@@ -265,7 +265,7 @@ background: #F76902;
 <p>We’ll create a directory called <code>test_frames</code> to store all the generated frames.</p>
 <p>In python cells, you can use an exclaimation mark <code>!</code> to run shell commands. This is useful for running <code>oiiotool</code>, <code>ffmpeg</code>, and other command-line tools directly from the notebook.</p>
 <pre class="{bash}"><code>pwd</code></pre>
-<div id="d3d04786" class="cell" data-execution_count="1">
+<div id="c655189d" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a directory for test frames - </span></span>
@@ -292,7 +292,7 @@ background: #F76902;
 <section id="colorchecker-from-tiff" class="level3">
 <h3 class="anchored" data-anchor-id="colorchecker-from-tiff">🎨 ColorChecker from TIFF</h3>
 <p>This goes out to the <a href="https://babelcolor.com/colorchecker-2.htm#CCP2_data">Babel Color site</a> to get their ColorChecker L*a*b* TIFF that has been measured and averaged over multiple charts (30 I think?). We then convert it to EXR using ImageMagick and resize it with <code>oiiotool</code>.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
-<div id="ca47a5e2" class="cell" data-execution_count="2">
+<div id="d63c14ad" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> urllib.request</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> zipfile</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -346,7 +346,7 @@ background: #F76902;
 <p>The <code>make_quantized_ramp_exr.py</code> script generates a quantized ramp image, while the <code>make_ramp_exr.py</code> script generates a linear ramp image.</p>
 <section id="regular-ramp" class="level4">
 <h4 class="anchored" data-anchor-id="regular-ramp">Regular Ramp</h4>
-<div id="ee11b021" class="cell" data-execution_count="3">
+<div id="04b36660" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> OpenImageIO <span class="im">as</span> oiio</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
@@ -371,7 +371,7 @@ background: #F76902;
 <section id="quantized-ramp" class="level4">
 <h4 class="anchored" data-anchor-id="quantized-ramp">Quantized Ramp</h4>
 <p>Same thing as above, but we’re quantizing it to 10-bit to mimic the 4:2:2 ProRes HQ we’re messing with from Kodak’s scanner.</p>
-<div id="0fd8b052" class="cell" data-execution_count="4">
+<div id="78033330" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> OpenImageIO <span class="im">as</span> oiio</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
@@ -403,7 +403,7 @@ background: #F76902;
 <h3 class="anchored" data-anchor-id="encode-to-prores-hq">🎞️ Encode to ProRes HQ</h3>
 <p>Now that we have the test frames, we can encode them to ProRes HQ. This is done using <code>ffmpeg</code>, a powerful tool for video processing. The command below encodes the EXR frames into a ProRes 4444 MOV file. The <code>-pix_fmt yuv444p10le</code> option specifies the pixel format, and <code>-profile:v 4</code> sets the ProRes profile to 4444. If we prefer a 4:2:2 profile, we can use <code>-profile:v 3</code> instead.</p>
 <p>Let’s do this with straight python, no bash, for now. This way you can see how to explicitly call the subprocesses if you want. (It also lets us do some variable substitution.)</p>
-<div id="89119eca" class="cell" data-execution_count="5">
+<div id="4abec0c4" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> subprocess <span class="im">import</span> run</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>output_file <span class="op">=</span> <span class="ss">f"test_output.mov"</span></span>
@@ -431,7 +431,7 @@ background: #F76902;
 <h3 class="anchored" data-anchor-id="decode-to-tiffs-convert-to-linear-exrs">📥 Decode to TIFFs, Convert to Linear EXRs</h3>
 <p>The ‘clean’ way to do this, according to the FFmpeg documentation, is to dump as TIFFs and then convert to EXRs. This is done using <code>ffmpeg</code> to decode the MOV file back into TIFF frames, and then using <code>oiiotool</code> to convert the TIFFs to EXR format with linear color space.</p>
 <p>Again, straight python, because we’re doing some variable substitution.</p>
-<div id="ffb4010e" class="cell" data-execution_count="6">
+<div id="3c3c4edd" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> glob</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define paths</span></span>
@@ -474,7 +474,7 @@ background: #F76902;
 <h3 class="anchored" data-anchor-id="compute-differences-export-heatmaps">🔎 Compute Differences &amp; Export Heatmaps</h3>
 <p>OK - here’s the cool part. Let’s compute some differences, compute some heatmaps of the differences, etc.</p>
 <p>First - a utility to compute some metrics via <code>colour-science</code>.</p>
-<div id="a344ba47" class="cell" data-execution_count="7">
+<div id="26a8deb8" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> colour</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> colour.models <span class="im">import</span> RGB_to_XYZ, XYZ_to_Lab, RGB_COLOURSPACES</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
@@ -515,7 +515,7 @@ background: #F76902;
 <span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> mean, rms, psnr, max_error, orig_rgb, roundtrip_rgb, delta_e</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now, we iterate through the images, do the computations…</p>
-<div id="ff5f9dbd" class="cell" data-execution_count="8">
+<div id="c56da4b2" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define paths</span></span>
@@ -608,7 +608,7 @@ background: #F76902;
 <section id="diff-metrics-and-heatmaps" class="level2">
 <h2 class="anchored" data-anchor-id="diff-metrics-and-heatmaps">🔎 Diff Metrics and Heatmaps</h2>
 <p>Each original frame is compared to its roundtripped EXR using <code>oiiotool --diff</code>. Metrics are collected into a CSV for easy viewing:</p>
-<div id="942bc96b" class="cell" data-execution_count="9">
+<div id="4dadde80" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
@@ -688,7 +688,7 @@ background: #F76902;
 </div>
 <section id="error-vs-frame" class="level3">
 <h3 class="anchored" data-anchor-id="error-vs-frame">📈 Error vs Frame</h3>
-<div id="0e6740dc" class="cell" data-execution_count="10">
+<div id="66ac4b6b" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>metrics[[<span class="st">"rms"</span>, <span class="st">"max_error"</span>]].plot(kind<span class="op">=</span><span class="st">"bar"</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>), title<span class="op">=</span><span class="st">"Roundtrip Errors by Frame"</span>)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Error"</span>)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>plt.grid(<span class="va">True</span>)</span>
