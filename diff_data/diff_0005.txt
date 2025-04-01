@@ -1,0 +1,8 @@
+Computing diff of "test_frames/frame_0005.exr" vs "exr_frames/frame_0005.exr"
+  Mean error = 0.000279673
+  RMS error = 0.000334115
+  Peak SNR = 69.5221
+  Max error  = 0.0008582472801208496 @ (1551, 0, R)  values are 0.7576942, 0.7576942, 0.7576942 vs 0.75683594, 0.75683594, 0.75683594
+  3134976 pixels (99.7%) over 1e-06
+  3134976 pixels (99.7%) over 1e-06
+FAILURE

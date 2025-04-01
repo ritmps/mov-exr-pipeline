@@ -24,7 +24,7 @@ It is intended to teach:
 
 Make sure the following tools are installed and available in your environment:
 
-```bash
+```{bash}
 ffmpeg -version | head -1
 oiiotool --version
 ociobakelut --version || echo "OCIO CLI optional"

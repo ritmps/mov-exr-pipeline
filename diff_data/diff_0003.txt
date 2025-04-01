@@ -1,0 +1,2 @@
+Computing diff of "test_frames/frame_0003.exr" vs "exr_frames/frame_0003.exr"
+PASS

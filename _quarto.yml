@@ -1,0 +1,30 @@
+project:
+  type: website
+
+website:
+  site-url: https://flipphillips.github.io/exr-validation/
+  title: "EXR Validation"
+  page-navigation: true
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: roundtrip.qmd
+        text: EXR Roundtrip Test
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    css: styles.css
+    number-sections: false
+    toc-location: left
+    title-block-style: manuscript
+    title-block-banner: "#F76902"
+    title-block-banner-color: "#F0F3F4"
+    mermaid:
+      theme: default
+
+publish:
+  provider: github
+  repo: flipphillips/exr-validation
