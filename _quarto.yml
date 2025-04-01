@@ -1,29 +1,8 @@
-project:
-  type: website
-  output-dir: _site
+---
+title: "EXR Validation"
+format: html
+---
 
-website:
-  site-url: https://flipphillips.github.io/exr-validation/
-  title: "EXR Validation"
-  navbar:
-    left:
-      - href: roundtrip.qmd
-        text: EXR Roundtrip
-
-format:
-  html:
-    theme: cosmo
-    toc: true
-    css: styles.css
-    number-sections: false
-    toc-location: left
-    title-block-style: manuscript
-    title-block-banner: "#F76902"
-    title-block-banner-color: "#F0F3F4"
-    mermaid:
-      theme: default
-    date-format: "Last built on MMM D, YYYY"
-    
-# publish:
-#   provider: github
-#   repo: flipphillips/exr-validation
+:::{.callout-note}
+🔁 Head straight to the [EXR Roundtrip Analysis](roundtrip.qmd).
+:::
