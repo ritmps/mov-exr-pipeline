@@ -1,17 +1,10 @@
 [
   {
-    "objectID": "roundtrip.html",
-    "href": "roundtrip.html",
-    "title": "EXR Roundtrip Codec Validation",
-    "section": "",
-    "text": "This notebook provides a comprehensive guide to validating the fidelity of EXR image sequences when encoded and decoded through ProRes 4444. It covers the entire pipeline from generating test frames, encoding them, decoding back to EXR, and analyzing the differences.\nThe goal is to ensure that the roundtrip process maintains the original image quality, which is crucial for visual effects and animation workflows.\nThis workflow requires: - Python 3.8+ with numpy, pandas, matplotlib, and seaborn - OpenColorIO for color management - OpenImageIO for image processing - ImageMagick for TIFF conversion - FFmpeg for video encoding/decoding - oiiotool for image manipulation and analysis"
-  },
-  {
     "objectID": "roundtrip.html#overview",
     "href": "roundtrip.html#overview",
     "title": "EXR Roundtrip Codec Validation",
-    "section": "",
-    "text": "This notebook provides a comprehensive guide to validating the fidelity of EXR image sequences when encoded and decoded through ProRes 4444. It covers the entire pipeline from generating test frames, encoding them, decoding back to EXR, and analyzing the differences.\nThe goal is to ensure that the roundtrip process maintains the original image quality, which is crucial for visual effects and animation workflows.\nThis workflow requires: - Python 3.8+ with numpy, pandas, matplotlib, and seaborn - OpenColorIO for color management - OpenImageIO for image processing - ImageMagick for TIFF conversion - FFmpeg for video encoding/decoding - oiiotool for image manipulation and analysis"
+    "section": "📖 Overview",
+    "text": "📖 Overview\nThis notebook provides a comprehensive guide to validating the fidelity of EXR image sequences when encoded and decoded through ProRes 4444. It covers the entire pipeline from generating test frames, encoding them, decoding back to EXR, and analyzing the differences.\nThe goal is to ensure that the roundtrip process maintains the original image quality, which is crucial for visual effects and animation workflows.\nThis workflow requires: - Python 3.8+ with numpy, pandas, matplotlib, and seaborn - OpenColorIO for color management - OpenImageIO for image processing - ImageMagick for TIFF conversion - FFmpeg for video encoding/decoding - oiiotool for image manipulation and analysis"
   },
   {
     "objectID": "roundtrip.html#frame-generation",
