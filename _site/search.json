@@ -138,5 +138,12 @@
     "title": "Converting ProRes MOV to Linear EXR and Display PNGs",
     "section": "🧪 Bonus: Add reference frames",
     "text": "🧪 Bonus: Add reference frames\nUse the ramp and ColorChecker EXR generators to validate your round-trip fidelity.\nLet me know if you’d like to add an auto-testing block using oiiotool --diff."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "EXR Validation",
+    "section": "",
+    "text": "Note\n\n\n\n🔁 Head straight to the EXR Roundtrip Analysis."
   }
 ]

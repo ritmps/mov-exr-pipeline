@@ -1,8 +1,27 @@
----
-title: "EXR Validation"
-format: html
----
+project:
+  type: website
+  output-dir: _site
 
-:::{.callout-note}
-🔁 Head straight to the [EXR Roundtrip Analysis](roundtrip.qmd).
-:::
+website:
+  title: "EXR Validation"
+  site-url: https://ritmps.github.io/mov-exr-pipeline/
+  repo-url: https://github.com/ritmps/mov-exr-pipeline
+  repo-actions: [edit, issue]
+  navbar:
+    left:
+      - href: roundtrip.qmd
+        text: EXR Roundtrip
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-location: left
+    number-sections: false
+    title-block-style: manuscript
+    title-block-banner: "#F76902"
+    title-block-banner-color: "#F0F3F4"
+    date-format: "Last built on MMM D, YYYY"
+    css: styles.css
+    mermaid:
+      theme: default
