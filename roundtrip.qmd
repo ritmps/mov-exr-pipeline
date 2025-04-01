@@ -20,7 +20,7 @@ authors:
     roles: writing
     corresponding: true
 
-date: "2025-03-31"
+date-modified: last-modified
 description: |
   This notebook demonstrates the full pipeline for validating color fidelity when converting EXR image sequences through ProRes 4444 roundtrip compression. It is designed to teach:
   - Pattern generation (RGB ramps, ColorChecker)
@@ -28,6 +28,14 @@ description: |
   - Use of oiiotool for conversion and analysis
   - Difference visualization and metrics (RMS, PSNR, Max error)
 ---
+
+::: {.badges}
+
+![Build & Deploy](https://github.com/ritmps/mov-exr-pipeline/actions/workflows/quarto-publish.yml/badge.svg)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-ritmps/mov--exr--pipeline-blue?logo=github)](https://github.com/ritmps/mov-exr-pipeline)
+[![Download Scripts](https://img.shields.io/badge/Download-Scripts-orange?logo=files)](https://github.com/ritmps/mov-exr-pipeline/tree/main/scripts)
+
+:::
 
 ## 📖 Overview
 This notebook provides a comprehensive guide to validating the fidelity of EXR image sequences when encoded and decoded through ProRes 4444. It covers the entire pipeline from generating test frames, encoding them, decoding back to EXR, and analyzing the differences.

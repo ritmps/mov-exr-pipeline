@@ -22,7 +22,8 @@ format:
     title-block-banner-color: "#F0F3F4"
     mermaid:
       theme: default
-
+    date-format: "Last built on MMM D, YYYY"
+    
 # publish:
 #   provider: github
 #   repo: flipphillips/exr-validation
