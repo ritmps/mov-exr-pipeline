@@ -12,6 +12,10 @@ website:
       - href: roundtrip.qmd
         text: EXR Roundtrip
 
+# This makes roundtrip.qmd the homepage
+metadata-files: 
+  - roundtrip.qmd
+
 format:
   html:
     theme: cosmo

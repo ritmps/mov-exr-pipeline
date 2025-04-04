@@ -1,8 +1,0 @@
----
-title: "EXR Validation"
-format: html
----
-
-:::{.callout-note}
-🔁 Head straight to the [EXR Roundtrip Analysis](roundtrip.qmd).
-:::
